@@ -1,0 +1,23 @@
+{
+  "name": "image-recognition-ar",
+  "version": "1.0.0",
+  "description": "Web-based AR experience using MindAR for image tracking",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -l 8000",
+    "dev": "npx serve -l 8000",
+    "tunnel": "npx ngrok http 8000"
+  },
+  "keywords": [
+    "ar",
+    "webxr",
+    "mindar",
+    "aframe",
+    "image-tracking",
+    "augmented-reality"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}

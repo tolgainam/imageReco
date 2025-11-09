@@ -1,0 +1,251 @@
+{
+  "_comment": "This is an example configuration file. Copy relevant sections to products.json",
+
+  "products": [
+    {
+      "_comment": "EXAMPLE 1: Minimal configuration",
+      "id": "minimal-example",
+      "name": "Minimal Product",
+      "targetIndex": 0,
+      "target": {
+        "imagePath": "./assets/targets/minimal.mind"
+      },
+      "model": {
+        "path": "./assets/models/minimal.glb",
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "scale": { "x": 1, "y": 1, "z": 1 }
+      },
+      "ui": {
+        "colors": {
+          "primary": "#4CC3D9"
+        },
+        "content": {
+          "title": "My Product"
+        },
+        "buttons": []
+      }
+    },
+
+    {
+      "_comment": "EXAMPLE 2: Full configuration with all features",
+      "id": "complete-example",
+      "name": "Complete Product",
+      "description": "Shows all available configuration options",
+      "targetIndex": 1,
+      "target": {
+        "imagePath": "./assets/targets/complete.mind",
+        "imagePreview": "./assets/images/complete-preview.jpg"
+      },
+      "model": {
+        "path": "./assets/models/complete.glb",
+        "position": {
+          "x": 0,
+          "y": 0.2,
+          "z": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 45,
+          "z": 0
+        },
+        "scale": {
+          "x": 1.5,
+          "y": 1.5,
+          "z": 1.5
+        },
+        "animation": {
+          "enabled": true,
+          "clip": "*",
+          "loop": "repeat"
+        }
+      },
+      "ui": {
+        "colors": {
+          "primary": "#EF2D5E",
+          "secondary": "#764ba2",
+          "background": "rgba(30, 20, 40, 0.9)",
+          "text": "#FFFFFF"
+        },
+        "content": {
+          "title": "Amazing Product",
+          "subtitle": "Innovation at its finest",
+          "description": "Experience the future with our revolutionary product. Scan to see it come to life in augmented reality!",
+          "features": [
+            "Premium quality materials",
+            "Innovative design",
+            "Award-winning technology",
+            "Eco-friendly production"
+          ]
+        },
+        "buttons": [
+          {
+            "id": "btn-shop",
+            "label": "Shop Now",
+            "icon": "🛒",
+            "link": "https://shop.example.com/product",
+            "style": "primary",
+            "position": "bottom-left"
+          },
+          {
+            "id": "btn-info",
+            "label": "Learn More",
+            "icon": "ℹ️",
+            "link": "https://example.com/product-info",
+            "style": "secondary",
+            "position": "bottom-right"
+          }
+        ]
+      },
+      "interactions": {
+        "onFound": {
+          "showUI": true,
+          "playSound": true,
+          "soundPath": "./assets/sounds/found.mp3"
+        },
+        "onLost": {
+          "hideUI": true,
+          "pauseAnimation": true
+        }
+      }
+    },
+
+    {
+      "_comment": "EXAMPLE 3: E-commerce product",
+      "id": "ecommerce-product",
+      "name": "Premium Headphones",
+      "targetIndex": 2,
+      "target": {
+        "imagePath": "./assets/targets/headphones.mind"
+      },
+      "model": {
+        "path": "./assets/models/headphones.glb",
+        "position": { "x": 0, "y": 0.1, "z": 0 },
+        "rotation": { "x": 0, "y": 0, "z": 0 },
+        "scale": { "x": 0.8, "y": 0.8, "z": 0.8 },
+        "animation": {
+          "enabled": true,
+          "clip": "Rotate",
+          "loop": "repeat"
+        }
+      },
+      "ui": {
+        "colors": {
+          "primary": "#FF6B6B",
+          "secondary": "#4ECDC4",
+          "background": "rgba(0, 0, 0, 0.85)",
+          "text": "#FFFFFF"
+        },
+        "content": {
+          "title": "Studio Pro Headphones",
+          "subtitle": "$299.99",
+          "description": "Professional-grade audio with active noise cancellation. Perfect for music production and audiophiles.",
+          "features": [
+            "40mm neodymium drivers",
+            "Active noise cancellation",
+            "30-hour battery life",
+            "Premium leather cushions"
+          ]
+        },
+        "buttons": [
+          {
+            "id": "btn-buy-headphones",
+            "label": "Add to Cart",
+            "icon": "🛒",
+            "link": "https://shop.example.com/cart?add=headphones",
+            "style": "primary",
+            "position": "bottom-left"
+          },
+          {
+            "id": "btn-reviews",
+            "label": "Read Reviews",
+            "icon": "⭐",
+            "link": "https://shop.example.com/headphones/reviews",
+            "style": "secondary",
+            "position": "bottom-right"
+          }
+        ]
+      },
+      "interactions": {
+        "onFound": {
+          "showUI": true,
+          "playSound": false,
+          "soundPath": ""
+        },
+        "onLost": {
+          "hideUI": true,
+          "pauseAnimation": false
+        }
+      }
+    },
+
+    {
+      "_comment": "EXAMPLE 4: Simple single-button product",
+      "id": "simple-product",
+      "name": "Water Bottle",
+      "targetIndex": 3,
+      "target": {
+        "imagePath": "./assets/targets/bottle.mind"
+      },
+      "model": {
+        "path": "./assets/models/bottle.glb",
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "animation": {
+          "enabled": false
+        }
+      },
+      "ui": {
+        "colors": {
+          "primary": "#3498db",
+          "secondary": "#2ecc71"
+        },
+        "content": {
+          "title": "Eco Water Bottle",
+          "subtitle": "Sustainable hydration",
+          "description": "Made from 100% recycled materials. Keep drinks cold for 24 hours."
+        },
+        "buttons": [
+          {
+            "id": "btn-bottle-buy",
+            "label": "Buy Now - $24.99",
+            "icon": "💧",
+            "link": "https://shop.example.com/bottle",
+            "style": "primary",
+            "position": "bottom-center"
+          }
+        ]
+      },
+      "interactions": {
+        "onFound": {
+          "showUI": true,
+          "playSound": false
+        },
+        "onLost": {
+          "hideUI": true,
+          "pauseAnimation": false
+        }
+      }
+    }
+  ],
+
+  "globalSettings": {
+    "multipleTargets": true,
+    "maxSimultaneousTargets": 3,
+    "defaultColors": {
+      "primary": "#4CC3D9",
+      "secondary": "#667eea",
+      "background": "rgba(0, 0, 0, 0.85)",
+      "text": "#ffffff"
+    },
+    "loading": {
+      "title": "Loading AR Experience",
+      "subtitle": "Please wait while we prepare your experience...",
+      "backgroundColor": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+    },
+    "instructions": {
+      "title": "Point Camera at Product",
+      "subtitle": "Align your camera with the product packaging to begin the AR experience",
+      "backgroundColor": "rgba(0, 0, 0, 0.75)"
+    }
+  }
+}

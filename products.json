@@ -1,0 +1,110 @@
+{
+  "_comment": "Product Configuration - Define your AR products here",
+  "_usage": "For single-product-at-a-time scanning: Create one .mind file with all products, or use separate .mind files for each",
+  "_workflow": "1. Create image targets → 2. Add GLB models → 3. Configure below → 4. Test!",
+
+  "products": [
+    {
+      "_comment": "EXAMPLE 1: First product - Replace with your actual product",
+      "id": "product-1",
+      "name": "Example Product 1",
+      "description": "This is an example product with AR experience",
+      "targetIndex": 0,
+      "target": {
+        "imagePath": "./assets/targets/zynSpearmint.mind",
+        "_note": "Use same .mind file for all products (combined) OR separate files",
+        "imagePreview": "./assets/images/product-1-preview.jpg"
+      },
+      "model": {
+        "path": "./assets/models/iluma-i-prime.glb",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        },
+        "animation": {
+          "enabled": false,
+          "clip": "*",
+          "loop": "repeat"
+        }
+      },
+      "ui": {
+        "colors": {
+          "primary": "#4CC3D9",
+          "secondary": "#667eea",
+          "background": "rgba(0, 0, 0, 0.85)",
+          "text": "#ffffff"
+        },
+        "content": {
+          "title": "Product 1 Title",
+          "subtitle": "Amazing AR Experience",
+          "description": "Scan this product to see an amazing 3D model with interactive features.",
+          "features": [
+            "High quality 3D model",
+            "Interactive animations",
+            "Detailed product information"
+          ]
+        },
+        "buttons": [
+          {
+            "id": "btn-learn-more",
+            "label": "Learn More",
+            "icon": "ℹ️",
+            "link": "https://example.com/product-1",
+            "style": "primary",
+            "position": "bottom-left"
+          },
+          {
+            "id": "btn-buy-now",
+            "label": "Buy Now",
+            "icon": "🛒",
+            "link": "https://example.com/product-1/buy",
+            "style": "secondary",
+            "position": "bottom-right"
+          }
+        ]
+      },
+      "interactions": {
+        "onFound": {
+          "showUI": true,
+          "playSound": false,
+          "soundPath": "./assets/sounds/found.mp3"
+        },
+        "onLost": {
+          "hideUI": true,
+          "pauseAnimation": false
+        }
+      }
+    }
+  ],
+  "globalSettings": {
+    "multipleTargets": true,
+    "maxSimultaneousTargets": 3,
+    "defaultColors": {
+      "primary": "#4CC3D9",
+      "secondary": "#667eea",
+      "background": "rgba(0, 0, 0, 0.85)",
+      "text": "#ffffff"
+    },
+    "loading": {
+      "title": "Loading AR Experience",
+      "subtitle": "Please wait...",
+      "backgroundColor": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+    },
+    "instructions": {
+      "title": "Point Camera at Product",
+      "subtitle": "Align your camera with the product to see the AR experience",
+      "backgroundColor": "rgba(0, 0, 0, 0.75)"
+    }
+  }
+}

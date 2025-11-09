@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Image Recognition AR Experience</title>
+
+  <!-- MindAR and A-Frame -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="./css/styles.css">
+
+  <!-- Configuration Loader -->
+  <script src="./js/config-loader.js"></script>
+</head>
+<body>
+
+  <!-- UI Overlay -->
+  <div id="ui-container">
+    <div id="loading-screen" class="overlay active">
+      <div class="loader"></div>
+      <p>Loading AR Experience...</p>
+    </div>
+
+    <div id="instructions-screen" class="overlay">
+      <div class="instructions-content">
+        <h1>Point Camera at Product Box</h1>
+        <p>Align your camera with the product box to see the AR experience</p>
+      </div>
+    </div>
+
+    <div id="tracking-indicator" class="hidden">
+      <span class="dot"></span>
+      <span class="text">Tracking</span>
+    </div>
+  </div>
+
+  <!-- A-Frame AR Scene -->
+  <!-- Note: imageTargetSrc is automatically set by config-loader.js based on products.json -->
+  <a-scene
+    mindar-image="imageTargetSrc: ; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
+    embedded
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <!-- Assets (will be populated by config-loader.js) -->
+    <a-assets>
+      <!-- Products will be loaded dynamically from products.json -->
+    </a-assets>
+
+    <!-- Camera -->
+    <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+
+    <!-- Targets will be generated dynamically from products.json -->
+
+  </a-scene>
+
+  <!-- Custom JavaScript -->
+  <script src="./js/app.js"></script>
+
+  <!-- Initialize AR with configuration -->
+  <script>
+    // Initialize configuration loader
+    const arConfig = new ARConfigLoader();
+
+    // Make it globally available
+    window.arConfig = arConfig;
+
+    // Load configuration and setup scene
+    arConfig.loadConfig()
+      .then(() => {
+        console.log('Products loaded:', arConfig.products.length);
+        arConfig.generateScene();
+        arConfig.updateSceneConfig();
+      })
+      .catch((error) => {
+        console.error('Failed to load configuration:', error);
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+          loadingScreen.querySelector('p').textContent = 'Error loading configuration. Please refresh.';
+        }
+      });
+  </script>
+
+</body>
+</html>
