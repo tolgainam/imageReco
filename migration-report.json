@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-11-10T01:32:27.530Z",
+  "supabaseUrl": "https://wqtmgnwhpmwztlemlwwd.supabase.co",
+  "summary": {
+    "total": 1,
+    "successful": 1,
+    "failed": 0,
+    "verified": true,
+    "durationSeconds": 2.63
+  },
+  "migrations": [
+    {
+      "success": true,
+      "product": "product-1",
+      "productId": "5333bb6d-ab50-440c-9255-3a3cc980b1fc"
+    }
+  ]
+}

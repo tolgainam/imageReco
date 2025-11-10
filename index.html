@@ -10,11 +10,21 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
+  <!-- Supabase Client (for database integration) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- Custom styles -->
   <link rel="stylesheet" href="./css/styles.css">
 
-  <!-- Configuration Loader -->
+  <!-- Configuration -->
+  <script src="./js/config.js"></script>
+
+  <!-- Configuration Loader (base class - must load before Supabase loader) -->
   <script src="./js/config-loader.js"></script>
+
+  <!-- Supabase Integration (optional - only used if enabled in config.js) -->
+  <script src="./js/supabase-client.js"></script>
+  <script src="./js/supabase-config-loader.js"></script>
 </head>
 <body>
 
@@ -41,7 +51,7 @@
   <!-- A-Frame AR Scene -->
   <!-- Note: imageTargetSrc is automatically set by config-loader.js based on products.json -->
   <a-scene
-    mindar-image="imageTargetSrc: ; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;"
+    mindar-image="imageTargetSrc: ; autoStart: false; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5;"
     embedded
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
@@ -63,8 +73,15 @@
 
   <!-- Initialize AR with configuration -->
   <script>
+    // Determine which config loader to use based on feature flags
+    // Set in js/config.js: CONFIG.features.supabaseEnabled
+    const useSupabase = window.CONFIG?.features?.supabaseEnabled ?? false;
+    const ConfigLoader = useSupabase ? SupabaseConfigLoader : ARConfigLoader;
+
+    console.log(`🔧 Using ${useSupabase ? 'SupabaseConfigLoader' : 'ARConfigLoader'}`);
+
     // Initialize configuration loader
-    const arConfig = new ARConfigLoader();
+    const arConfig = new ConfigLoader();
 
     // Make it globally available
     window.arConfig = arConfig;
@@ -72,15 +89,37 @@
     // Load configuration and setup scene
     arConfig.loadConfig()
       .then(() => {
-        console.log('Products loaded:', arConfig.products.length);
+        console.log('✅ Products loaded:', arConfig.products.length);
+        console.log('📍 Config source:', arConfig.getConfigSource ? arConfig.getConfigSource() : 'products.json');
+
+        // Generate scene
         arConfig.generateScene();
+
+        // Update scene configuration
         arConfig.updateSceneConfig();
+
+        // Dispatch event to signal configuration is ready
+        window.dispatchEvent(new CustomEvent('ar-config-ready'));
+        console.log('✅ AR configuration ready event dispatched');
+
+        // Hide loading screen, show instructions
+        setTimeout(() => {
+          const loadingScreen = document.getElementById('loading-screen');
+          const instructionsScreen = document.getElementById('instructions-screen');
+          if (loadingScreen) loadingScreen.classList.remove('active');
+          if (instructionsScreen) instructionsScreen.classList.add('active');
+
+          // Auto-hide instructions after 5 seconds
+          setTimeout(() => {
+            if (instructionsScreen) instructionsScreen.classList.remove('active');
+          }, 5000);
+        }, 1000);
       })
       .catch((error) => {
-        console.error('Failed to load configuration:', error);
+        console.error('❌ Failed to load configuration:', error);
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) {
-          loadingScreen.querySelector('p').textContent = 'Error loading configuration. Please refresh.';
+          loadingScreen.querySelector.textContent = 'Error loading configuration. Please refresh.';
         }
       });
   </script>

@@ -9,25 +9,50 @@ const trackingIndicator = document.getElementById('tracking-indicator');
 // Get A-Frame scene
 const sceneEl = document.querySelector('a-scene');
 
-// Wait for scene to load
-sceneEl.addEventListener('loaded', () => {
-  console.log('A-Frame scene loaded');
+// Flags to track readiness
+let sceneLoaded = false;
+let configReady = false;
+
+// Check if both scene and config are ready, then start MindAR
+function tryStartMindAR() {
+  if (!sceneLoaded || !configReady) {
+    console.log(`⏳ Waiting... Scene loaded: ${sceneLoaded}, Config ready: ${configReady}`);
+    return;
+  }
+
+  console.log('✅ Both scene and config ready, starting MindAR...');
 
   // Get AR system
   const arSystem = sceneEl.systems['mindar-image-system'];
 
-  // Hide loading, show instructions
-  setTimeout(() => {
-    loadingScreen.classList.remove('active');
-    instructionsScreen.classList.add('active');
-  }, 500);
+  // DEBUG: Check if imageTargetSrc is set
+  const mindARAttr = sceneEl.getAttribute('mindar-image');
+  console.log('🔍 MindAR attribute before start:', mindARAttr);
 
-  // Start AR after a short delay
+  if (!mindARAttr || !mindARAttr.imageTargetSrc || mindARAttr.imageTargetSrc === '') {
+    console.error('❌ ERROR: imageTargetSrc not set!');
+    return;
+  }
+
+  // Start MindAR
   setTimeout(() => {
-    console.log('Starting MindAR...');
+    console.log('🚀 Starting MindAR...');
     arSystem.start();
-    instructionsScreen.classList.remove('active');
-  }, 2000);
+  }, 500);
+}
+
+// Wait for scene to load
+sceneEl.addEventListener('loaded', () => {
+  console.log('A-Frame scene loaded');
+  sceneLoaded = true;
+  tryStartMindAR();
+});
+
+// Wait for AR configuration to be ready
+window.addEventListener('ar-config-ready', () => {
+  console.log('AR configuration ready');
+  configReady = true;
+  tryStartMindAR();
 });
 
 // Track target found/lost events

@@ -414,7 +414,11 @@ class ARConfigLoader {
     console.log(`🎯 Setting image target source: ${targetSrc}`);
 
     // Update scene with target
-    scene.setAttribute('mindar-image', `imageTargetSrc: ${targetSrc}; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;`);
+    const mindARConfig = `imageTargetSrc: ${targetSrc}; autoStart: false; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5;`;
+
+    console.log(`🔧 MindAR config string: "${mindARConfig}"`);
+
+    scene.setAttribute('mindar-image', mindARConfig);
 
     // Log configuration
     console.log('📱 MindAR configuration:');

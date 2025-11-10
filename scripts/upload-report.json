@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-11-10T01:04:02.385Z",
+  "supabaseUrl": "https://wqtmgnwhpmwztlemlwwd.supabase.co",
+  "summary": {
+    "total": 0,
+    "successful": 0,
+    "failed": 0,
+    "totalSizeKB": 0,
+    "durationSeconds": 0
+  },
+  "uploads": [],
+  "errors": []
+}

@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-11-10T01:56:05.748Z",
+  "supabaseUrl": "https://wqtmgnwhpmwztlemlwwd.supabase.co",
+  "summary": {
+    "total": 2,
+    "successful": 1,
+    "failed": 1,
+    "totalSizeKB": 376.83,
+    "durationSeconds": 5.19
+  },
+  "uploads": [
+    {
+      "fileName": "zynSpearmint.mind",
+      "bucket": "ar-targets",
+      "publicUrl": "https://wqtmgnwhpmwztlemlwwd.supabase.co/storage/v1/object/public/ar-targets/zynSpearmint.mind",
+      "sizeKB": 376.83
+    }
+  ],
+  "errors": [
+    {
+      "path": "/Users/tolgainam/Github/imageReco/assets/models/iluma-i-prime.glb",
+      "error": "fetch failed"
+    }
+  ]
+}

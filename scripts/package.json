@@ -1,0 +1,17 @@
+{
+  "name": "ar-experience-migration-scripts",
+  "version": "1.0.0",
+  "description": "Migration scripts for AR Experience Supabase integration",
+  "scripts": {
+    "upload": "node upload-assets.js",
+    "migrate": "node migrate-to-supabase.js",
+    "full-migration": "npm run upload && npm run migrate"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {},
+  "author": "",
+  "license": "MIT"
+}

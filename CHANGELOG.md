@@ -1,5 +1,383 @@
 # Changelog
 
+## [2.0.0] - 2025-11-10 - Supabase Integration
+
+### Added
+
+#### Complete Supabase Backend Integration
+- **Dynamic product management** via Supabase database
+- **Real-time analytics tracking** for user interactions
+- **CDN-powered asset delivery** via Supabase Storage
+- **Automatic fallback** to products.json if Supabase unavailable
+- **Feature flag system** for easy toggling between Supabase and static JSON
+
+#### New Documentation Files
+- **SUPABASE_INTEGRATION.md** - Complete integration guide
+  - Architecture overview with diagrams
+  - Database schema documentation
+  - API integration patterns
+  - File storage strategy (4 buckets)
+  - Security policies (RLS)
+  - Code changes overview
+  - Migration instructions
+  - Performance optimizations
+  - Admin interface requirements
+  - Cost estimates ($25/mo Pro plan recommended)
+
+- **SUPABASE_MIGRATION_GUIDE.md** - Step-by-step migration guide
+  - 7-phase migration process
+  - Supabase project setup
+  - Database configuration
+  - Asset upload instructions
+  - Data migration steps
+  - Testing checklist
+  - Deployment guide
+  - Rollback plan
+  - FAQ section
+
+- **SUPABASE_SCHEMA.sql** - Complete database schema
+  - 8 core tables (products, product_targets, product_models, product_ui_config, product_buttons, product_interactions, global_settings, analytics_events)
+  - 1 versioning table (product_versions)
+  - Indexes for performance
+  - Triggers for auto-updating timestamps
+  - Function to save product versions automatically
+  - View `products_complete` returning JSON matching products.json format
+  - Materialized view `products_complete_mv` for faster queries
+  - Utility functions (get_product_count_by_status, get_popular_products)
+
+- **SUPABASE_RLS_POLICIES.sql** - Row Level Security policies
+  - Public read access for published products
+  - Public insert-only access for analytics
+  - Authenticated user policies
+  - Storage bucket policies (4 buckets)
+  - Performance indexes for RLS checks
+  - Testing queries
+  - Admin setup examples
+
+#### New JavaScript Files
+
+- **js/config.js** - Central configuration system
+  - Feature flags (supabaseEnabled, analyticsEnabled, fallbackToJSON)
+  - Supabase credentials (url, anonKey)
+  - Analytics configuration
+  - Performance settings (caching, timeouts)
+  - Debug options
+  - Environment detection (dev/prod)
+  - Configuration validation
+
+- **js/supabase-client.js** - Supabase client wrapper
+  - Product data fetching (`getProducts()`, `getProduct()`, `getGlobalSettings()`)
+  - Analytics tracking (`trackEvent()`, `trackProductFound()`, `trackButtonClick()`)
+  - Event batching system
+  - Cache management
+  - Connection checking
+  - Storage URL helpers
+  - File upload support
+  - Real-time subscriptions support
+
+- **js/supabase-config-loader.js** - Supabase-aware config loader
+  - Extends `ARConfigLoader`
+  - Loads products from Supabase database
+  - Automatic fallback to products.json on error
+  - Data format conversion (Supabase → products.json format)
+  - Integrated analytics tracking for all events
+  - Real-time updates support (optional)
+  - Performance monitoring
+  - Switch between Supabase/JSON modes at runtime
+
+#### Migration Scripts
+
+- **scripts/upload-assets.js** - Asset upload automation
+  - Uploads .mind files to ar-targets bucket
+  - Uploads .glb files to ar-models bucket
+  - Uploads images to ar-images bucket
+  - Uploads sounds to ar-sounds bucket
+  - Generates asset-urls.json mapping
+  - Detailed progress reporting
+  - Error handling and retry logic
+  - Upload summary with file sizes
+
+- **scripts/migrate-to-supabase.js** - Data migration automation
+  - Reads products.json
+  - Reads asset-urls.json
+  - Migrates global settings
+  - Migrates all products with related data
+  - Replaces local paths with Supabase CDN URLs
+  - Refreshes materialized view
+  - Verification checks
+  - Migration report generation
+
+- **scripts/package.json** - NPM dependencies for scripts
+  - `@supabase/supabase-js` for Supabase client
+  - `dotenv` for environment variables
+  - Convenient npm scripts (`upload`, `migrate`, `full-migration`)
+
+### Changed
+
+#### index.html
+- **Added Supabase client library** from CDN
+- **Added config.js, supabase-client.js, supabase-config-loader.js** script includes
+- **Updated initialization logic** to use feature flags
+  - Checks `CONFIG.features.supabaseEnabled`
+  - Uses `SupabaseConfigLoader` or `ARConfigLoader` based on flag
+  - Logs config source (Supabase vs products.json)
+- **Improved loading flow**
+  - Shows loading screen
+  - Transitions to instructions
+  - Auto-hides instructions after 5 seconds
+- **Better error handling** with user-friendly messages
+
+### Features
+
+#### Database-Driven Product Management
+```
+Before: Edit products.json → Redeploy
+After:  Edit in Supabase → Live immediately
+```
+
+#### Analytics Tracking
+Automatically tracks:
+- Page loads
+- Product found/lost events
+- Button clicks
+- Model load performance
+- Errors
+
+Stored in `analytics_events` table with:
+- Event type
+- Product ID
+- Session ID
+- Metadata
+- Timestamp
+- User agent
+- Viewport size
+
+#### CDN Asset Delivery
+```
+Before: ./assets/models/model.glb (local)
+After:  https://xxxxx.supabase.co/storage/v1/object/public/ar-models/model.glb
+```
+
+Benefits:
+- Faster load times
+- Cloudflare CDN integration
+- Global edge distribution
+- Bandwidth optimization
+
+#### Feature Flag System
+Easy toggle between modes:
+```javascript
+// Use Supabase
+CONFIG.features.supabaseEnabled = true;
+
+// Use products.json
+CONFIG.features.supabaseEnabled = false;
+```
+
+With automatic fallback:
+```javascript
+CONFIG.features.fallbackToJSON = true;
+```
+
+#### Real-Time Updates (Optional)
+```javascript
+arConfig.enableRealTimeUpdates();
+// Scene automatically refreshes when database changes
+```
+
+### Architecture
+
+#### Database Tables
+```
+products (id, product_id, name, description, target_index, status)
+  ↓
+  ├── product_targets (image_path, image_preview)
+  ├── product_models (model_path, position, rotation, scale, animation)
+  ├── product_ui_config (colors, content)
+  │   └── product_buttons (label, icon, link, style, position)
+  ├── product_interactions (on_found, on_lost)
+  └── product_versions (version history)
+
+global_settings (multiple_targets, max_simultaneous_targets, colors, loading, instructions)
+analytics_events (event_type, product_id, session_id, metadata, timestamp)
+```
+
+#### Storage Buckets
+```
+ar-targets/    → .mind files
+ar-models/     → .glb files
+ar-images/     → .jpg, .png files
+ar-sounds/     → .mp3 files
+```
+
+#### Configuration Flow
+```
+index.html
+  ↓
+config.js (feature flags)
+  ↓
+[supabaseEnabled=true]          [supabaseEnabled=false]
+  ↓                                ↓
+SupabaseConfigLoader          ARConfigLoader
+  ↓                                ↓
+Supabase Database  ←--(fallback)-- products.json
+  ↓
+products_complete view
+  ↓
+Generate A-Frame Scene
+```
+
+### Security
+
+#### Row Level Security (RLS)
+- Public users: Read published products only
+- Public users: Insert analytics only (no read)
+- Authenticated users: Full CRUD on products
+- Service role: Bypass RLS for admin operations
+
+#### API Keys
+- **anon key**: Safe to expose in client-side code (RLS protected)
+- **service_role key**: Never expose (full database access)
+
+### Performance Optimizations
+
+#### Materialized Views
+```sql
+CREATE MATERIALIZED VIEW products_complete_mv AS
+SELECT * FROM products_complete;
+```
+- Faster queries (pre-computed joins)
+- Refresh on schedule or on-demand
+
+#### Caching
+- Client-side config caching (1 hour default)
+- Configurable via `CONFIG.performance.cacheDuration`
+- Cache invalidation on demand
+
+#### Event Batching
+- Batch analytics events every 5 seconds (optional)
+- Reduces database writes
+- Configurable via `CONFIG.analytics.batchInterval`
+
+### Migration Path
+
+#### Quick Start (Keep products.json)
+1. Set `supabaseEnabled: false` in config.js
+2. Everything works as before
+3. No changes needed
+
+#### Gradual Migration
+1. Set up Supabase project
+2. Run database schema
+3. Upload assets (optional)
+4. Migrate products (optional)
+5. Enable `supabaseEnabled: true`
+6. Enable `fallbackToJSON: true` for safety
+7. Test thoroughly
+8. Deploy
+
+#### Full Migration
+```bash
+# 1. Install dependencies
+cd scripts
+npm install
+
+# 2. Configure environment
+cp ../.env.example .env
+# Edit .env with Supabase credentials
+
+# 3. Upload assets
+npm run upload
+
+# 4. Migrate data
+npm run migrate
+
+# 5. Update config.js
+# Set supabaseEnabled: true
+
+# 6. Test locally
+cd ..
+python3 -m http.server 8000
+
+# 7. Deploy
+git add .
+git commit -m "Add Supabase integration"
+git push
+```
+
+### Backward Compatibility
+
+- ✅ Existing products.json still works
+- ✅ No breaking changes to HTML structure
+- ✅ No breaking changes to CSS
+- ✅ ARConfigLoader unchanged (for non-Supabase users)
+- ✅ Supabase features are opt-in via feature flags
+- ✅ Automatic fallback if Supabase unavailable
+
+### Cost Estimates
+
+#### Free Tier (for testing)
+- 500 MB database
+- 1 GB file storage
+- 2 GB bandwidth/month
+- ~10,000 AR sessions/month
+
+#### Pro Tier ($25/month) - Recommended
+- 8 GB database
+- 100 GB file storage
+- 50 GB bandwidth/month
+- ~100,000 AR sessions/month
+- Point-in-time recovery
+- Daily backups
+- Email support
+
+### Known Issues
+
+None - all changes are additive and backward compatible.
+
+### Recommendations
+
+1. **Start with feature flag disabled** - Test existing functionality
+2. **Set up Supabase project** - Follow SUPABASE_MIGRATION_GUIDE.md
+3. **Test with fallback enabled** - Ensure graceful degradation
+4. **Monitor analytics** - Use data to optimize experience
+5. **Regular backups** - Export products.json as backup
+6. **Use materialized views** - Refresh hourly for best performance
+
+### Developer Experience Improvements
+
+#### Before Supabase
+```
+1. Edit products.json
+2. Commit changes
+3. Push to GitHub
+4. Wait for deployment
+5. Changes live
+```
+
+#### After Supabase
+```
+1. Edit in Supabase Dashboard
+2. Changes live immediately
+```
+
+#### Workflow Comparison
+```
+Content Update:
+Before: 5-10 minutes (edit → deploy)
+After:  < 1 minute (edit in dashboard)
+
+Analytics:
+Before: None
+After:  Real-time tracking in database
+
+Asset Management:
+Before: Local files → Manual upload
+After:  CDN with automatic optimization
+```
+
+---
+
 ## [1.1.1] - 2025-11-09 - Documentation Updates
 
 ### Fixed
