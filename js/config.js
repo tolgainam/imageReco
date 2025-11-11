@@ -26,14 +26,14 @@ const CONFIG = {
      * true: Load products from Supabase database
      * false: Load products from products.json (static file)
      */
-    supabaseEnabled: false,  // Set to true when ready to use Supabase
+    supabaseEnabled: true,  // Set to true when ready to use Supabase
 
     /**
      * Enable/disable analytics tracking
      * Requires Supabase to be enabled
      * Tracks: page loads, product found/lost, button clicks, errors
      */
-    analyticsEnabled: true,  // Set to true to track analytics
+    analyticsEnabled: false,  // Set to true to track analytics
 
     /**
      * Fallback to products.json if Supabase fails

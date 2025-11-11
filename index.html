@@ -17,64 +17,24 @@
   <!--
     CRITICAL LOADING ORDER TO PREVENT BUFFER CORRUPTION:
 
-    Problem: MindAR internally bundles TensorFlow.js. If we load TensorFlow.js
-    BEFORE MindAR, the WASM memory buffers conflict causing RangeError when
-    parsing .mind files: "Extra XXXX bytes found at buffer[1]"
+    Problem: MindAR uses TensorFlow.js internally. Loading TensorFlow.js
+    at the same time causes WASM memory buffer conflicts, resulting in
+    RangeError when parsing .mind files.
 
-    Solution: Load MindAR FIRST, then load TensorFlow for Teachable Machine.
-    MindAR's bundled TensorFlow will be available as window.tf, which Teachable
-    Machine will reuse (with harmless kernel registration warnings).
+    Solution: Load MindAR FIRST and let it complete initialization.
+    Then dynamically load TensorFlow.js AFTER scene is ready.
   -->
 
-  <!-- MindAR (bundles TensorFlow.js internally - MUST load first) -->
+  <!-- MindAR (uses TensorFlow.js internally - MUST load first) -->
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-  <!-- Wait for MindAR's TensorFlow to fully initialize -->
-  <script>
-    (function() {
-      // Wait for MindAR's TensorFlow to be ready
-      const waitForTF = setInterval(() => {
-        if (typeof tf !== 'undefined' && tf.ready) {
-          tf.ready().then(() => {
-            console.log('✅ MindAR TensorFlow.js ready');
-            clearInterval(waitForTF);
-            window.dispatchEvent(new Event('mindar-tf-ready'));
-          });
-        }
-      }, 100);
+  <!--
+    CRITICAL: Load ML libraries AFTER MindAR has fully started
+    Listen for 'mindar-started' event from app.js
+  -->
 
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        clearInterval(waitForTF);
-        if (typeof tf === 'undefined') {
-          console.warn('⚠️ MindAR TensorFlow timeout');
-        }
-        window.dispatchEvent(new Event('mindar-tf-ready'));
-      }, 10000);
-    })();
-  </script>
-
-  <!-- Teachable Machine (will use MindAR's TensorFlow.js) -->
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.6/dist/teachablemachine-image.min.js"></script>
-
-  <script>
-    // Suppress harmless TensorFlow.js kernel registration warnings
-    // These occur because Teachable Machine registers additional kernels
-    // on top of MindAR's TensorFlow.js instance
-    if (typeof console !== 'undefined') {
-      const originalWarn = console.warn;
-      console.warn = function(...args) {
-        // Filter out kernel registration warnings
-        if (args[0] && typeof args[0] === 'string' &&
-            (args[0].includes('already registered') ||
-             args[0].includes('kernel') ||
-             args[0].includes('registry'))) {
-          return; // Suppress - this is expected and harmless
-        }
-        originalWarn.apply(console, args);
-      };
-    }
-  </script>
+  <!-- Preload .mind file to ensure it's fully downloaded before MindAR parses it -->
+  <link rel="preload" href="./assets/targets/zynSpearmint.mind" as="fetch" crossorigin="anonymous">
 
   <!-- Custom styles -->
   <link rel="stylesheet" href="./css/styles.css">
@@ -144,9 +104,9 @@
   </div>
 
   <!-- A-Frame AR Scene -->
-  <!-- Note: imageTargetSrc is automatically set by config-loader.js based on products.json -->
+  <!-- Note: imageTargetSrc is SET DIRECTLY to prevent double-loading -->
   <a-scene
-    mindar-image="imageTargetSrc: ; autoStart: false; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5;"
+    mindar-image="imageTargetSrc: ./assets/targets/zynSpearmint.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.0005; filterBeta: 0.1; warmupTolerance: 5; missTolerance: 5;"
     embedded
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
@@ -191,7 +151,8 @@
         arConfig.generateScene();
 
         // Update scene configuration
-        arConfig.updateSceneConfig();
+        // DISABLED: imageTargetSrc is now set directly in HTML to prevent double-loading
+        // arConfig.updateSceneConfig();
 
         // Dispatch event to signal configuration is ready
         window.dispatchEvent(new CustomEvent('ar-config-ready'));

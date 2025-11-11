@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progressive Library Test</title>
+
+  <!-- Step 1: Core libraries (WORKING) -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Step 2: Add our custom scripts (COMMENT OUT TO TEST ONE BY ONE) -->
+  <script src="./js/config.js"></script>
+  <script src="./js/config-loader.js"></script>
+  <script src="./js/supabase-client.js"></script>
+  <script src="./js/supabase-config-loader.js"></script>
+  <script src="./js/ml-classifier.js"></script>
+  <script src="./js/particle-effects.js"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #status {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px;
+      font-family: monospace;
+      z-index: 9999;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">Testing libraries...</div>
+
+  <a-scene
+    mindar-image="imageTargetSrc: ./assets/targets/zynSpearmint.mind; autoStart: false;"
+    embedded
+    vr-mode-ui="enabled: false">
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-box position="0 0 0" scale="0.5 0.5 0.5" color="#FF0000"></a-box>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    const statusEl = document.getElementById('status');
+
+    function updateStatus(msg) {
+      console.log(msg);
+      statusEl.innerHTML += '<br>' + msg;
+    }
+
+    updateStatus('🧪 PROGRESSIVE TEST');
+    updateStatus('Libraries loaded:');
+    updateStatus('✅ A-Frame');
+    updateStatus('✅ MindAR');
+    updateStatus('✅ A-Frame Extras');
+    updateStatus('✅ Supabase');
+    updateStatus('✅ config.js');
+
+    const scene = document.querySelector('a-scene');
+
+    scene.addEventListener('loaded', () => {
+      updateStatus('✅ Scene loaded');
+
+      setTimeout(() => {
+        updateStatus('🚀 Starting MindAR...');
+        const arSystem = scene.systems['mindar-image-system'];
+
+        if (arSystem) {
+          try {
+            arSystem.start();
+            updateStatus('✅ MindAR STARTED - NO ERROR!');
+          } catch (err) {
+            updateStatus('❌ ERROR: ' + err.message);
+            console.error('Full error:', err);
+          }
+        } else {
+          updateStatus('❌ MindAR system not found');
+        }
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

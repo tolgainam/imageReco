@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test 2: MindAR + A-Frame Extras</title>
+  
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <!-- ADD: A-Frame Extras -->
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+  
+  <style>body { margin: 0; overflow: hidden; }</style>
+</head>
+<body>
+  <a-scene
+    mindar-image="imageTargetSrc: ./assets/targets/zynSpearmint.mind; autoStart: false;"
+    embedded
+    vr-mode-ui="enabled: false">
+    
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-box position="0 0 0" scale="0.5 0.5 0.5" color="#00FF00"></a-box>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    console.log('🧪 TEST 2 - MindAR + A-Frame Extras');
+    
+    const scene = document.querySelector('a-scene');
+    scene.addEventListener('loaded', () => {
+      console.log('✅ Scene loaded');
+      setTimeout(() => {
+        console.log('🚀 Starting MindAR...');
+        const arSystem = scene.systems['mindar-image-system'];
+        if (arSystem) {
+          try {
+            arSystem.start();
+            console.log('✅ MindAR started - NO ERROR!');
+          } catch (err) {
+            console.error('❌ Error:', err);
+          }
+        }
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

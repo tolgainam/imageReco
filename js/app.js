@@ -21,7 +21,7 @@ let detectionInProgress = false;
 window.addEventListener('ar-config-ready', async () => {
   console.log('✅ AR config ready');
 
-  // Wait for MindAR's TensorFlow to be ready before initializing ML
+  // Wait for ML libraries to be loaded before initializing
   const initializeML = async () => {
     // Initialize ML Classifier with trained model
     if (window.MLClassifier && window.arConfig) {
@@ -46,18 +46,12 @@ window.addEventListener('ar-config-ready', async () => {
     }
   };
 
-  // Check if TensorFlow is ready
-  if (typeof tf !== 'undefined' && tf.ready) {
-    await tf.ready();
-    console.log('✅ TensorFlow.js ready for ML initialization');
+  // Wait for ML libraries (TensorFlow.js + Teachable Machine) to load
+  // These are loaded dynamically AFTER scene loads to prevent WASM conflicts
+  window.addEventListener('ml-libraries-ready', async () => {
+    console.log('✅ ML libraries loaded, initializing classifier...');
     await initializeML();
-  } else {
-    // Wait for mindar-tf-ready event
-    window.addEventListener('mindar-tf-ready', async () => {
-      console.log('✅ MindAR TensorFlow ready signal received');
-      await initializeML();
-    }, { once: true });
-  }
+  }, { once: true });
 });
 
 // Wait for scene, config, AND camera ready before starting MindAR
@@ -76,22 +70,58 @@ function tryStartAR() {
   const arSystem = sceneEl.systems['mindar-image-system'];
 
   if (arSystem) {
-    // Wait a bit more to ensure camera video stream is fully initialized
+    // Wait longer to ensure all resources are fully loaded and initialized
+    // This prevents buffer corruption during .mind file parsing
     setTimeout(() => {
       console.log('🚀 Starting MindAR...');
 
       try {
         arSystem.start();
 
-        // Setup ML event listeners after MindAR starts
+        // CRITICAL: Wait for MindAR to fully start before loading TensorFlow.js
+        // This prevents WASM buffer conflicts
         setTimeout(() => {
+          console.log('✅ MindAR started, now safe to load TensorFlow.js...');
+
+          // Load TensorFlow.js dynamically
+          const tfScript = document.createElement('script');
+          tfScript.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js';
+          tfScript.onload = () => {
+            console.log('✅ TensorFlow.js loaded');
+
+            // Suppress kernel warnings
+            const originalWarn = console.warn;
+            console.warn = function(...args) {
+              if (args[0] && typeof args[0] === 'string' &&
+                  (args[0].includes('already registered') ||
+                   args[0].includes('kernel') ||
+                   args[0].includes('registry'))) {
+                return;
+              }
+              originalWarn.apply(console, args);
+            };
+
+            // Load Teachable Machine
+            const tmScript = document.createElement('script');
+            tmScript.src = 'https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js';
+            tmScript.onload = () => {
+              console.log('✅ Teachable Machine loaded');
+              window.dispatchEvent(new Event('ml-libraries-ready'));
+            };
+            tmScript.onerror = () => console.error('❌ Failed to load Teachable Machine');
+            document.head.appendChild(tmScript);
+          };
+          tfScript.onerror = () => console.error('❌ Failed to load TensorFlow.js');
+          document.head.appendChild(tfScript);
+
+          // Setup ML event listeners
           setupMLEventListeners();
-        }, 1000);
+        }, 2000); // Wait 2 seconds after MindAR starts
       } catch (error) {
         console.error('❌ Failed to start MindAR:', error);
         console.error('   Error details:', error.message);
       }
-    }, 1000); // Shorter delay now that we're waiting for camera
+    }, 3000); // Wait 3 seconds to ensure all resources fully loaded
   } else {
     console.error('❌ MindAR system not found');
   }

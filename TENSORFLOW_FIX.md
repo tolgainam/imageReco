@@ -39,35 +39,40 @@ The issue was caused by **WASM memory buffer conflicts** between multiple Tensor
 
 **AFTER (Fixed):**
 ```html
-<!-- MindAR loaded FIRST (bundles TensorFlow.js) -->
+<!-- MindAR loaded FIRST (uses TensorFlow.js internally) -->
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-<!-- Wait for MindAR's TensorFlow to initialize -->
+<!-- Dynamically load TensorFlow.js AFTER scene loads -->
 <script>
-  (function() {
-    const waitForTF = setInterval(() => {
-      if (typeof tf !== 'undefined' && tf.ready) {
-        tf.ready().then(() => {
-          console.log('✅ MindAR TensorFlow.js ready');
-          clearInterval(waitForTF);
-          window.dispatchEvent(new Event('mindar-tf-ready'));
-        });
-      }
-    }, 100);
-  })();
-</script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const scene = document.querySelector('a-scene');
 
-<!-- Teachable Machine loaded SECOND (reuses MindAR's TensorFlow.js) -->
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.6/dist/teachablemachine-image.min.js"></script>
+    scene.addEventListener('loaded', () => {
+      // Load TensorFlow.js dynamically
+      const tfScript = document.createElement('script');
+      tfScript.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js';
+      tfScript.onload = () => {
+        // Then load Teachable Machine
+        const tmScript = document.createElement('script');
+        tmScript.src = 'https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.6/dist/teachablemachine-image.min.js';
+        tmScript.onload = () => {
+          window.dispatchEvent(new Event('ml-libraries-ready'));
+        };
+        document.head.appendChild(tmScript);
+      };
+      document.head.appendChild(tfScript);
+    }, { once: true });
+  });
+</script>
 ```
 
 ### Key Changes
 
-1. **Removed separate TensorFlow.js script** - No longer load `@tensorflow/tfjs` separately
-2. **MindAR loads first** - Its bundled TensorFlow.js becomes the single source of truth
-3. **Wait for TensorFlow.js ready** - Ensure WASM backend fully initializes before Teachable Machine
-4. **Teachable Machine reuses TensorFlow.js** - Uses MindAR's instance (causes harmless kernel warnings)
-5. **ML initialization waits** - app.js now waits for `mindar-tf-ready` event before initializing ML classifier
+1. **MindAR loads first (alone)** - No other TensorFlow.js libraries loaded initially
+2. **Dynamic script loading** - TensorFlow.js and Teachable Machine load AFTER scene initialization
+3. **Timing separation** - MindAR's internal TensorFlow.js fully initializes before our TensorFlow.js loads
+4. **Event-based coordination** - Uses `ml-libraries-ready` event to signal when ML can initialize
+5. **ML initialization waits** - app.js now waits for `ml-libraries-ready` event before initializing ML classifier
 
 ## Results
 
@@ -90,12 +95,14 @@ TensorFlow.js uses WebAssembly (WASM) for performance. When multiple instances t
 
 ### The Fix Explained
 
-By loading MindAR first:
-1. MindAR's bundled TensorFlow.js allocates WASM memory
-2. This becomes the **single** TensorFlow.js instance
-3. Teachable Machine imports and extends this instance
-4. All libraries share the same WASM memory space
-5. Buffer operations use correct offsets
+By using dynamic script loading with timing separation:
+1. MindAR loads and initializes its internal TensorFlow.js (separate WASM space)
+2. A-Frame scene loads and MindAR completes initialization
+3. **Only after scene loads**, TensorFlow.js loads dynamically (new WASM space)
+4. The timing gap prevents WASM memory conflicts
+5. Both TensorFlow instances can coexist without buffer corruption
+6. MindAR uses its internal TensorFlow for AR tracking
+7. Our TensorFlow.js instance is used for ML classification
 
 ## Harmless Warnings
 
