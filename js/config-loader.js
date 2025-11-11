@@ -8,6 +8,7 @@ class ARConfigLoader {
     this.products = [];
     this.globalSettings = {};
     this.currentProduct = null;
+    this.particleEffects = null; // Particle effects instance
   }
 
   /**
@@ -80,17 +81,42 @@ class ARConfigLoader {
     const existingTargets = scene.querySelectorAll('[mindar-image-target]');
     existingTargets.forEach(target => target.remove());
 
-    // Generate assets and targets for each product
-    this.products.forEach((product, index) => {
-      // Add model to assets
+    // Group products by targetIndex
+    const targetGroups = {};
+    this.products.forEach((product) => {
+      const targetIndex = product.targetIndex;
+      if (!targetGroups[targetIndex]) {
+        targetGroups[targetIndex] = [];
+      }
+      targetGroups[targetIndex].push(product);
+    });
+
+    console.log(`🎯 Target groups: ${Object.keys(targetGroups).length} unique target(s)`);
+
+    // Generate assets for all products
+    this.products.forEach((product) => {
       const assetItem = document.createElement('a-asset-item');
       assetItem.setAttribute('id', product.id);
       assetItem.setAttribute('src', product.model.path);
       assets.appendChild(assetItem);
+    });
 
-      // Create target entity
-      const target = this.createTargetEntity(product);
-      scene.appendChild(target);
+    // Create target entities based on groups
+    Object.entries(targetGroups).forEach(([targetIndex, products]) => {
+      if (products.length === 1) {
+        // Single product for this target - use standard method
+        console.log(`🏗️ Creating target for ${products[0].name} (index ${targetIndex})`);
+        const entity = this.createTargetEntity(products[0]);
+        scene.appendChild(entity);
+      } else {
+        // Multiple products share this target - create ONE entity with multiple models
+        console.log(`🏗️ Creating SHARED target for ${products.length} products (index ${targetIndex})`);
+        console.log(`   Products: ${products.map(p => p.name).join(', ')}`);
+        console.log(`   ℹ️ ML will distinguish between variants`);
+
+        const entity = this.createSharedTargetEntity(products, targetIndex);
+        scene.appendChild(entity);
+      }
     });
 
     console.log('Scene generated with', this.products.length, 'products');
@@ -136,6 +162,79 @@ class ARConfigLoader {
   }
 
   /**
+   * Create shared target entity for multiple products
+   * Used when multiple products share the same targetIndex (OCR distinguishes them)
+   */
+  createSharedTargetEntity(products, targetIndex) {
+    const entity = document.createElement('a-entity');
+    entity.setAttribute('mindar-image-target', `targetIndex: ${targetIndex}`);
+    entity.setAttribute('data-shared-target', 'true');
+    entity.setAttribute('data-product-ids', products.map(p => p.id).join(','));
+
+    // Create models for all products (initially all hidden)
+    products.forEach(product => {
+      const model = document.createElement('a-gltf-model');
+      model.setAttribute('src', `#${product.id}`);
+      model.setAttribute('position', `${product.model.position.x} ${product.model.position.y} ${product.model.position.z}`);
+      model.setAttribute('rotation', `${product.model.rotation.x} ${product.model.rotation.y} ${product.model.rotation.z}`);
+      model.setAttribute('scale', `${product.model.scale.x} ${product.model.scale.y} ${product.model.scale.z}`);
+      model.setAttribute('visible', 'false'); // Hide initially - OCR will show correct one
+      model.setAttribute('data-product-id', product.id);
+
+      // Add animation if enabled
+      if (product.model.animation.enabled) {
+        model.setAttribute('animation-mixer', `clip: ${product.model.animation.clip}; loop: ${product.model.animation.loop}`);
+      }
+
+      entity.appendChild(model);
+    });
+
+    // Add shared event listeners (no specific product UI until ML identifies)
+    entity.addEventListener('targetFound', () => {
+      console.log(`Shared target found (${products.length} possible products)`);
+      console.log(`   Waiting for ML to identify which product...`);
+    });
+
+    entity.addEventListener('targetLost', () => {
+      console.log(`Shared target lost`);
+      // Hide all models
+      entity.querySelectorAll('a-gltf-model').forEach(model => {
+        model.setAttribute('visible', 'false');
+      });
+    });
+
+    // Listen for ML identification
+    window.addEventListener('product-identified', (event) => {
+      const identifiedProduct = event.detail.product;
+
+      // Check if this event is for this target entity
+      const productIds = entity.getAttribute('data-product-ids').split(',');
+      if (!productIds.includes(identifiedProduct.id)) {
+        return; // Not for this target
+      }
+
+      console.log(`✅ Shared target identified as: ${identifiedProduct.name}`);
+
+      // Hide all models
+      entity.querySelectorAll('a-gltf-model').forEach(model => {
+        model.setAttribute('visible', 'false');
+      });
+
+      // Show the identified product's model
+      const identifiedModel = entity.querySelector(`[data-product-id="${identifiedProduct.id}"]`);
+      if (identifiedModel) {
+        identifiedModel.setAttribute('visible', 'true');
+      }
+
+      // Show product UI
+      this.currentProduct = identifiedProduct;
+      this.onProductFound(identifiedProduct);
+    });
+
+    return entity;
+  }
+
+  /**
    * Attach event listeners to target entity
    */
   attachEventListeners(entity, product) {
@@ -169,6 +268,20 @@ class ARConfigLoader {
     // Apply custom colors
     this.applyProductColors(product.ui.colors);
 
+    // Start edge glow if enabled for this product
+    if (product.ui.edgeGlow?.enabled) {
+      if (!this.particleEffects) {
+        this.particleEffects = new ParticleEffects();
+      }
+
+      const options = {
+        glowIntensity: product.ui.edgeGlow.glowIntensity || 100,
+        glowOpacity: product.ui.edgeGlow.glowOpacity || 0.3
+      };
+
+      this.particleEffects.start(product.ui.colors.primary, options);
+    }
+
     // Show tracking indicator
     const trackingIndicator = document.getElementById('tracking-indicator');
     if (trackingIndicator) {
@@ -187,6 +300,11 @@ class ARConfigLoader {
     // Hide UI
     if (product.interactions.onLost.hideUI) {
       this.hideProductUI();
+    }
+
+    // Stop particle effects
+    if (this.particleEffects) {
+      this.particleEffects.stop();
     }
 
     // Hide tracking indicator
@@ -213,6 +331,7 @@ class ARConfigLoader {
     const productUI = document.createElement('div');
     productUI.id = 'product-ui';
     productUI.className = 'product-ui-container';
+    // Glassmorphism effect styling (single consistent style)
     productUI.style.cssText = `
       position: fixed;
       bottom: 20px;
@@ -220,14 +339,20 @@ class ARConfigLoader {
       transform: translateX(-50%);
       width: 90%;
       max-width: 500px;
-      background: ${product.ui.colors.background};
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 20px;
+      background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.05) 100%);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 24px;
       color: ${product.ui.colors.text};
       z-index: 1001;
       animation: slideUp 0.3s ease;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.37),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
     `;
 
     // Add content
@@ -414,7 +539,11 @@ class ARConfigLoader {
     console.log(`🎯 Setting image target source: ${targetSrc}`);
 
     // Update scene with target
-    const mindARConfig = `imageTargetSrc: ${targetSrc}; autoStart: false; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5;`;
+    // Filter settings for tracking responsiveness:
+    // - filterMinCF: Higher = more responsive, less smooth (range: 0.0001 to 10)
+    // - filterBeta: Higher = faster response to quick movements (range: 0.001 to 1000)
+    // Current: Smooth tracking with slightly better responsiveness than default
+    const mindARConfig = `imageTargetSrc: ${targetSrc}; autoStart: false; uiLoading: no; uiError: no; uiScanning: no; filterMinCF: 0.0005; filterBeta: 0.1; warmupTolerance: 5; missTolerance: 5;`;
 
     console.log(`🔧 MindAR config string: "${mindARConfig}"`);
 

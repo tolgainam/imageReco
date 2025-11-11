@@ -10,8 +10,32 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
+  <!-- Note: If using latest .mind file from online compiler, it should be compatible with MindAR 1.2.5 -->
+
   <!-- Supabase Client (for database integration) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- TensorFlow.js (shared by MindAR and Teachable Machine) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script>
+    // Suppress TensorFlow.js kernel registration warnings
+    // These occur because both MindAR and Teachable Machine use TensorFlow.js
+    // The warnings are harmless - kernels are shared correctly between libraries
+    if (typeof tf !== 'undefined' && tf.setBackend) {
+      // Suppress warnings by setting log level to error only
+      const originalWarn = console.warn;
+      console.warn = function(...args) {
+        // Filter out TensorFlow kernel registration warnings
+        if (args[0] && typeof args[0] === 'string' && args[0].includes('already registered')) {
+          return; // Suppress this warning
+        }
+        originalWarn.apply(console, args);
+      };
+    }
+  </script>
+
+  <!-- Teachable Machine (requires TensorFlow.js to be loaded first) -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
   <!-- Custom styles -->
   <link rel="stylesheet" href="./css/styles.css">
@@ -25,6 +49,12 @@
   <!-- Supabase Integration (optional - only used if enabled in config.js) -->
   <script src="./js/supabase-client.js"></script>
   <script src="./js/supabase-config-loader.js"></script>
+
+  <!-- ML Product Classifier -->
+  <script src="./js/ml-classifier.js"></script>
+
+  <!-- Particle Effects System -->
+  <script src="./js/particle-effects.js"></script>
 </head>
 <body>
 
@@ -32,7 +62,13 @@
   <div id="ui-container">
     <div id="loading-screen" class="overlay active">
       <div class="loader"></div>
-      <p>Loading AR Experience...</p>
+      <p id="loading-text">Loading AR Experience...</p>
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        <p id="progress-text" class="progress-text">0%</p>
+      </div>
     </div>
 
     <div id="instructions-screen" class="overlay">
@@ -45,6 +81,26 @@
     <div id="tracking-indicator" class="hidden">
       <span class="dot"></span>
       <span class="text">Tracking</span>
+    </div>
+
+    <!-- 3D Axis Indicator -->
+    <div id="axis-indicator">
+      <svg width="100" height="100" viewBox="-50 -50 100 100">
+        <!-- X Axis (Red) -->
+        <line x1="0" y1="0" x2="40" y2="0" stroke="#ff0000" stroke-width="2" />
+        <polygon points="40,0 35,3 35,-3" fill="#ff0000" />
+        <text x="45" y="5" fill="#ff0000" font-size="14" font-weight="bold">X</text>
+
+        <!-- Y Axis (Green) -->
+        <line x1="0" y1="0" x2="0" y2="-40" stroke="#00ff00" stroke-width="2" />
+        <polygon points="0,-40 3,-35 -3,-35" fill="#00ff00" />
+        <text x="5" y="-40" fill="#00ff00" font-size="14" font-weight="bold">Y</text>
+
+        <!-- Z Axis (Blue) -->
+        <line x1="0" y1="0" x2="-28" y2="28" stroke="#0088ff" stroke-width="2" />
+        <polygon points="-28,28 -24,26 -26,24" fill="#0088ff" />
+        <text x="-35" y="35" fill="#0088ff" font-size="14" font-weight="bold">Z</text>
+      </svg>
     </div>
   </div>
 

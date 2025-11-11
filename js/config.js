@@ -33,7 +33,7 @@ const CONFIG = {
      * Requires Supabase to be enabled
      * Tracks: page loads, product found/lost, button clicks, errors
      */
-    analyticsEnabled: false,  // Set to true to track analytics
+    analyticsEnabled: true,  // Set to true to track analytics
 
     /**
      * Fallback to products.json if Supabase fails

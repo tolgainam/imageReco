@@ -7,12 +7,13 @@
     {
       "_comment": "EXAMPLE 1: First product - Replace with your actual product",
       "id": "product-1",
-      "name": "Example Product 1",
-      "description": "This is an example product with AR experience",
+      "name": "Zyn Spearmint",
+      "description": "Zyn Spearmint nicotine pouches",
+      "_mlNote": "ML model trained to recognize this variant (label: 'Spearmint')",
       "targetIndex": 0,
       "target": {
         "imagePath": "./assets/targets/zynSpearmint.mind",
-        "_note": "Use same .mind file for all products (combined) OR separate files",
+        "_note": "SHARED .mind file - ML model distinguishes between Spearmint and Cool Mint",
         "imagePreview": "./assets/images/product-1-preview.jpg"
       },
       "model": {
@@ -45,6 +46,12 @@
           "background": "rgba(0, 0, 0, 0.85)",
           "text": "#ffffff"
         },
+        "edgeGlow": {
+          "enabled": true,
+          "glowIntensity": 120,
+          "glowOpacity": 0.25,
+          "_note": "Subtle glow around screen edges using primary color for immersion"
+        },
         "content": {
           "title": "Product 1 Title",
           "subtitle": "Amazing AR Experience",
@@ -69,6 +76,95 @@
             "label": "Buy Now",
             "icon": "🛒",
             "link": "https://example.com/product-1/buy",
+            "style": "secondary",
+            "position": "bottom-right"
+          }
+        ]
+      },
+      "interactions": {
+        "onFound": {
+          "showUI": true,
+          "playSound": false,
+          "soundPath": "./assets/sounds/found.mp3"
+        },
+        "onLost": {
+          "hideUI": true,
+          "pauseAnimation": false
+        }
+      }
+    },
+    {
+      "_comment": "EXAMPLE 2: Zyn Cool Mint - Testing ML with similar product",
+      "id": "product-2",
+      "name": "Zyn Cool Mint",
+      "description": "X-Low 1.5 MG",
+      "_mlNote": "ML model trained to recognize this variant (label: 'Cool Mint')",
+      "targetIndex": 0,
+      "target": {
+        "imagePath": "./assets/targets/zynSpearmint.mind",
+        "_note": "SAME .mind file as product-1 - both products share target, ML distinguishes",
+        "imagePreview": "./assets/images/product-2-preview.jpg"
+      },
+      "model": {
+        "path": "./assets/models/zyn-cool-mint.glb",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 90,
+          "z": 90
+        },
+        "scale": {
+          "x": 13,
+          "y": 13,
+          "z": 13
+        },
+        "animation": {
+          "enabled": false,
+          "clip": "*",
+          "loop": "repeat"
+        }
+      },
+      "ui": {
+        "colors": {
+          "primary": "#00B4D8",
+          "secondary": "#0077B6",
+          "background": "rgba(0, 0, 0, 0.85)",
+          "text": "#ffffff"
+        },
+        "edgeGlow": {
+          "enabled": true,
+          "glowIntensity": 140,
+          "glowOpacity": 0.3,
+          "_note": "Slightly stronger glow for Cool Mint product"
+        },
+        "content": {
+          "title": "Zyn Cool Mint",
+          "subtitle": "X-Low 1.5MG",
+          "description": "Ideal for smokers or vapers new to ZYN. Designed to deliver a lower tingling sensation. A cooling taste of menthol with hints of peppermint, delivering a smooth aand mellow nicotine experience.",
+          "features": [
+            "Smoke-free",
+            "Tobacco-free",
+            "Device-free"
+          ]
+        },
+        "buttons": [
+          {
+            "id": "btn-learn-more-2",
+            "label": "Learn More",
+            "icon": "",
+            "link": "https://example.com/product-2",
+            "style": "primary",
+            "position": "bottom-left"
+          },
+          {
+            "id": "btn-buy-now-2",
+            "label": "Buy Now",
+            "icon": "",
+            "link": "https://example.com/product-2/buy",
             "style": "secondary",
             "position": "bottom-right"
           }

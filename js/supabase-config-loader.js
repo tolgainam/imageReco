@@ -245,6 +245,11 @@ class SupabaseConfigLoader extends ARConfigLoader {
           background: 'rgba(0, 0, 0, 0.85)',
           text: '#ffffff'
         },
+        edgeGlow: {
+          enabled: false,
+          glowIntensity: 100,
+          glowOpacity: 0.3
+        },
         content: {
           title: 'Product',
           subtitle: '',
@@ -261,6 +266,11 @@ class SupabaseConfigLoader extends ARConfigLoader {
         secondary: uiData.color_secondary || '#667eea',
         background: uiData.color_background || 'rgba(0, 0, 0, 0.85)',
         text: uiData.color_text || '#ffffff'
+      },
+      edgeGlow: {
+        enabled: uiData.edge_glow_enabled ?? false,
+        glowIntensity: uiData.edge_glow_intensity ?? 100,
+        glowOpacity: uiData.edge_glow_opacity ?? 0.3
       },
       content: {
         title: uiData.title || 'Product',
