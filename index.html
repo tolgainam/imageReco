@@ -5,37 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Image Recognition AR Experience</title>
 
-  <!-- MindAR and A-Frame -->
+  <!-- A-Frame (load first, no dependencies) -->
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
-  <!-- Note: If using latest .mind file from online compiler, it should be compatible with MindAR 1.2.5 -->
+  <!-- A-Frame Extras (animations support) -->
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
   <!-- Supabase Client (for database integration) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- TensorFlow.js (shared by MindAR and Teachable Machine) -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <!--
+    CRITICAL LOADING ORDER TO PREVENT BUFFER CORRUPTION:
+
+    Problem: MindAR internally bundles TensorFlow.js. If we load TensorFlow.js
+    BEFORE MindAR, the WASM memory buffers conflict causing RangeError when
+    parsing .mind files: "Extra XXXX bytes found at buffer[1]"
+
+    Solution: Load MindAR FIRST, then load TensorFlow for Teachable Machine.
+    MindAR's bundled TensorFlow will be available as window.tf, which Teachable
+    Machine will reuse (with harmless kernel registration warnings).
+  -->
+
+  <!-- MindAR (bundles TensorFlow.js internally - MUST load first) -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <!-- Wait for MindAR's TensorFlow to fully initialize -->
   <script>
-    // Suppress TensorFlow.js kernel registration warnings
-    // These occur because both MindAR and Teachable Machine use TensorFlow.js
-    // The warnings are harmless - kernels are shared correctly between libraries
-    if (typeof tf !== 'undefined' && tf.setBackend) {
-      // Suppress warnings by setting log level to error only
+    (function() {
+      // Wait for MindAR's TensorFlow to be ready
+      const waitForTF = setInterval(() => {
+        if (typeof tf !== 'undefined' && tf.ready) {
+          tf.ready().then(() => {
+            console.log('✅ MindAR TensorFlow.js ready');
+            clearInterval(waitForTF);
+            window.dispatchEvent(new Event('mindar-tf-ready'));
+          });
+        }
+      }, 100);
+
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        clearInterval(waitForTF);
+        if (typeof tf === 'undefined') {
+          console.warn('⚠️ MindAR TensorFlow timeout');
+        }
+        window.dispatchEvent(new Event('mindar-tf-ready'));
+      }, 10000);
+    })();
+  </script>
+
+  <!-- Teachable Machine (will use MindAR's TensorFlow.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.6/dist/teachablemachine-image.min.js"></script>
+
+  <script>
+    // Suppress harmless TensorFlow.js kernel registration warnings
+    // These occur because Teachable Machine registers additional kernels
+    // on top of MindAR's TensorFlow.js instance
+    if (typeof console !== 'undefined') {
       const originalWarn = console.warn;
       console.warn = function(...args) {
-        // Filter out TensorFlow kernel registration warnings
-        if (args[0] && typeof args[0] === 'string' && args[0].includes('already registered')) {
-          return; // Suppress this warning
+        // Filter out kernel registration warnings
+        if (args[0] && typeof args[0] === 'string' &&
+            (args[0].includes('already registered') ||
+             args[0].includes('kernel') ||
+             args[0].includes('registry'))) {
+          return; // Suppress - this is expected and harmless
         }
         originalWarn.apply(console, args);
       };
     }
   </script>
-
-  <!-- Teachable Machine (requires TensorFlow.js to be loaded first) -->
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
   <!-- Custom styles -->
   <link rel="stylesheet" href="./css/styles.css">

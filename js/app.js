@@ -21,26 +21,42 @@ let detectionInProgress = false;
 window.addEventListener('ar-config-ready', async () => {
   console.log('✅ AR config ready');
 
-  // Initialize ML Classifier with trained model
-  if (window.MLClassifier && window.arConfig) {
-    console.log('🔄 Initializing ML Classifier...');
-    try {
-      mlClassifier = new MLClassifier();
-      await mlClassifier.initialize(window.arConfig.products);
-      mlReady = mlClassifier.isReady();
+  // Wait for MindAR's TensorFlow to be ready before initializing ML
+  const initializeML = async () => {
+    // Initialize ML Classifier with trained model
+    if (window.MLClassifier && window.arConfig) {
+      console.log('🔄 Initializing ML Classifier...');
+      try {
+        mlClassifier = new MLClassifier();
+        await mlClassifier.initialize(window.arConfig.products);
+        mlReady = mlClassifier.isReady();
 
-      if (mlReady) {
-        console.log('✅ ML Classifier initialized and ready');
-        console.log('🤖 Model info:', mlClassifier.getModelInfo());
-      } else {
-        console.warn('⚠️ ML Classifier initialized but not ready');
+        if (mlReady) {
+          console.log('✅ ML Classifier initialized and ready');
+          console.log('🤖 Model info:', mlClassifier.getModelInfo());
+        } else {
+          console.warn('⚠️ ML Classifier initialized but not ready');
+        }
+      } catch (error) {
+        console.error('❌ ML Classifier initialization failed:', error);
+        mlReady = false;
       }
-    } catch (error) {
-      console.error('❌ ML Classifier initialization failed:', error);
-      mlReady = false;
+    } else {
+      console.warn('⚠️ MLClassifier or arConfig not available');
     }
+  };
+
+  // Check if TensorFlow is ready
+  if (typeof tf !== 'undefined' && tf.ready) {
+    await tf.ready();
+    console.log('✅ TensorFlow.js ready for ML initialization');
+    await initializeML();
   } else {
-    console.warn('⚠️ MLClassifier or arConfig not available');
+    // Wait for mindar-tf-ready event
+    window.addEventListener('mindar-tf-ready', async () => {
+      console.log('✅ MindAR TensorFlow ready signal received');
+      await initializeML();
+    }, { once: true });
   }
 });
 
